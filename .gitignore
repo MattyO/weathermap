@@ -1,3 +1,4 @@
 all_sites
-static/arrow/arrow+.png
+static/arrows/
 .DS_STORE
+static/all_sites.json

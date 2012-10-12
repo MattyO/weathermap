@@ -12,56 +12,92 @@
 		<script type="text/javascript" src="static/js/jquery-1.7.2.min.js"> </script>
 		<script type="text/javascript" src="static/js/bootstrap.min.js"> </script>
 		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=true"></script>
-		<!--
-		<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/maplabel/src/maplabel-compiled.js"> </script> --!>
+		<script type="text/javascript" src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/maplabel/src/maplabel-compiled.js"> </script> 
 		<script type="text/javascript"> 
 			var map;
-			var markers = new Array()
+			var markers = new Array();
+			var siteList = new Array();
 
-			function initMap(){
-				$(document).ready(function(){
-					console.log("initing map");
-					var mapOptions = {
-						zoom:2, 
-						center: new google.maps.LatLng(0,0),
-						 mapTypeId: google.maps.MapTypeId.ROADMAP
-					};
-					map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-						$.ajax({
-							url:'static/all_sites.json',
-							cache:false,
-							dataType:'json',
-							//crossDomain:true,
-							success:function(data){
-								for(var key in data){
-									var site = data[key];
-									var pos= new google.maps.LatLng( site.lat, site.lng)
-								if(site.wind != ''){
-									markers.push(new google.maps.Marker({
-										text : site.wind,
-										position : pos,
-										map : map,
-										icon: "static/arrows/arrow" +site.wind +".png"
-									}));
-								}else{
-										new google.maps.Marker({
-											position: pos, 
-											map: map, 
-											title: site.loc,
-										});
-									}
-								}
-							},
-							error:function(resp, error, test){
-							alert("failing");
-						//		alert(error);
+			$(document).ready(function(){
+				console.log("initing map");
+				var mapOptions = {
+					zoom:2, 
+					center: new google.maps.LatLng(0,0),
+					mapTypeId: google.maps.MapTypeId.ROADMAP 
+				};
+
+				map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+
+				$.ajax({
+					url:'static/all_sites.json',
+					cache:false,
+					dataType:'json',
+					//crossDomain:true,
+					success:function(data){
+						counter = 0;
+						for(var key in data){
+
+							var site = data[key];
+							var pos= new google.maps.LatLng( site.lat, site.lng);
+							var tempMarker = null;
+
+							if(site.wind != ''){
+								tempMarker = new google.maps.Marker({
+									text : site.wind,
+									position : pos,
+									map : map,
+									icon: "static/arrows/arrow" +site.wind +".png"
+								});
+							}else{
+								tempMarker = new google.maps.Marker({
+									position: pos, 
+									map: map, 
+									title: site.loc,
+								});
 							}
-						});
-					google.maps.event.addListener(map, 'bounds_changed', function(){
-					});
+							markers.push(tempMarker);
+							siteList.push({"site":site,"marker":tempMarker});
+							counter++;
+						}
+					}
 				});
-			}
-			google.maps.event.addDomListener(window, 'load', initMap);
+				//google.maps.event.addListener(map, 'bounds_changed',checkStable(map.getCenter()));
+				//checkStable(map.getCenter());
+				google.maps.event.addListener(map, 'bounds_changed',function(){setTimeout(checkStable(map.getCenter()),2000)});
+
+				function checkStable(currentMapPosition){
+					return function()  {
+							if(currentMapPosition == map.getCenter()){
+								createLabels();
+							}
+					}
+				}
+
+				function createLabels(){
+					var seeableMarks = Array();
+					counter = 0;
+					for(key in siteList){
+
+						if(map.getBounds().contains(siteList[key].marker.getPosition())){
+							seeableMarks.push(siteList[key]);
+							counter++;
+							if(seeableMarks.length > 100){
+								console.log("to many marks");
+								seeableMarks=null;
+								break;
+							}
+						}
+						counter++;
+					}
+					if(seeableMarks != null){
+						for(key in seeableMarks){
+							new MapLabel({map:map, position:seeableMarks[key].marker.getPosition(), text:seeableMarks[key].site.wind_kt});
+						}
+					}
+
+				}
+			});
+
 		</script> 
 	</head> 
 	<body> 

@@ -7,13 +7,13 @@ import json
 
 sites = {}
 call(["rm",'-r', "../all_sites"])
-os.makedirs('all_sites')
+os.makedirs('../all_sites')
 
 station_request = requests.get('http://w1.weather.gov/xml/current_obs/all_xml.zip')
 print station_request.headers
 with open('../all_sites/all_sites.zip', 'w') as f:
 	f.write(station_request.content)
-call(["unzip", "../all_sites/all_sites.zip", '-d', 'all_sites'])
+call(["unzip", "../all_sites/all_sites.zip", '-d', '../all_sites'])
 
 fileCounter = 0
 for file in os.listdir("../all_sites"):
@@ -23,6 +23,7 @@ for file in os.listdir("../all_sites"):
 		lat = ''
 		long = ''
 		wind  = ''
+		wind_kt  = ''
 
 		if site.find('location') is not None and site.find('location').text is not None:
 			location = site.find('location').text  
@@ -34,9 +35,12 @@ for file in os.listdir("../all_sites"):
 			wind = site.find('wind_degrees').text 
 		else:
 			print "wind direction not found !!"
-			
+		if site.find('wind_kt') is not None:
+			wind_kt = site.find('wind_kt').text 
+		else:
+			print "wind vt not found !!"
 
-		sites[os.path.splitext(file)[0]] = {"loc": location, 'lat':lat , 'lng':long , 'wind': wind}
+		sites[os.path.splitext(file)[0]] = {"loc": location, 'lat':lat , 'lng':long , 'wind': wind, 'wind_kt': wind_kt}
 		#sites.update({'site': {"location": location, 'lat':lat , 'long':long }})
 		fileCounter += 1
 
